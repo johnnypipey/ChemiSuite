@@ -1,0 +1,25 @@
+[
+    {
+        "name": "Test",
+        "description": "",
+        "assigned_person": "",
+        "contact_number": "",
+        "sash_open": false,
+        "alarm_active": false,
+        "webcams": [],
+        "dashboard_webcam": null,
+        "assigned_device_names": [
+            "IKA Stirrer Hotplate"
+        ]
+    },
+    {
+        "name": "test 2",
+        "description": "",
+        "assigned_person": "",
+        "contact_number": "",
+        "sash_open": false,
+        "alarm_active": false,
+        "webcams": [],
+        "dashboard_webcam": null
+    }
+]

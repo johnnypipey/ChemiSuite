@@ -1,0 +1,9 @@
+[
+    {
+        "name": "IKA Stirrer Hotplate",
+        "type": "ika_stirrer",
+        "com_port": "COM24",
+        "show_on_dashboard": true,
+        "icon": "c:\\Users\\johnn\\Documents\\PhD\\ChemiSuite\\devices\\icons\\hotplate.png"
+    }
+]
