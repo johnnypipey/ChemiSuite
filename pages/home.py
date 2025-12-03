@@ -3,11 +3,55 @@ from nicegui import ui
 import sys
 import os
 
-# Import devices and fume_hood modules to access their lists
+# Import devices, fume_hood, and bench modules to access their lists
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from pages import devices as devices_page
 from pages import fume_hood as fume_hood_page
+from pages import bench as bench_page
 import data_manager
+
+def render_dashboard_content():
+    """Render the dashboard content (devices, fume hoods, benches)"""
+    # Get all fume hoods and benches (they're always shown on dashboard)
+    dashboard_fume_hoods = fume_hood_page.fume_hoods
+    dashboard_benches = bench_page.benches
+
+    # Get all device names that are assigned to any fume hood or bench
+    assigned_device_names = set()
+    for fume_hood in dashboard_fume_hoods:
+        if fume_hood.get('assigned_devices'):
+            for device in fume_hood['assigned_devices']:
+                assigned_device_names.add(device['name'])
+    for bench in dashboard_benches:
+        if bench.get('assigned_devices'):
+            for device in bench['assigned_devices']:
+                assigned_device_names.add(device['name'])
+
+    # Get devices that should be shown on dashboard AND are not assigned to any fume hood or bench
+    dashboard_devices = [d for d in devices_page.devices
+                       if d.get('show_on_dashboard', False) and d['name'] not in assigned_device_names]
+
+    if dashboard_devices or dashboard_fume_hoods or dashboard_benches:
+        # Display devices, fume hoods, and benches in a grid
+        with ui.grid(columns=2).style("gap: 20px; width: 100%;"):
+            # Render devices
+            for device in dashboard_devices:
+                render_device_card(device)
+
+            # Render fume hoods - each spans 2 columns
+            for fume_hood in dashboard_fume_hoods:
+                # Container that spans 2 columns
+                with ui.column().style("grid-column: span 2; width: 100%;"):
+                    render_fume_hood_card(fume_hood)
+
+            # Render benches - each spans 2 columns
+            for bench in dashboard_benches:
+                # Container that spans 2 columns
+                with ui.column().style("grid-column: span 2; width: 100%;"):
+                    render_bench_card(bench)
+    else:
+        ui.label("No devices, fume hoods, or benches configured for dashboard display.").style("color: #888888; font-size: 16px; margin-top: 10px;")
+        ui.label("Add devices from the Devices page, fume hoods from the Fume Hood page, or benches from the Bench page to see them here.").style("color: #888888; font-size: 14px; margin-top: 5px;")
 
 def render():
     """Render the home page content"""
@@ -34,7 +78,7 @@ def render():
                                     ui.notify("Please enter a configuration name", type='warning')
                                     return
 
-                                success = data_manager.save_config(config_name_input.value, devices_page.devices, fume_hood_page.fume_hoods)
+                                success = data_manager.save_config(config_name_input.value, devices_page.devices, fume_hood_page.fume_hoods, bench_page.benches)
                                 if success:
                                     ui.notify(f"Configuration '{config_name_input.value}' saved successfully", type='positive')
                                     save_dialog.close()
@@ -101,15 +145,16 @@ def render():
                                         ui.notify("Please select a configuration", type='warning')
                                         return
 
-                                    devices_data, fume_hoods_data = data_manager.load_config(config_select.value)
+                                    devices_data, fume_hoods_data, benches_data = data_manager.load_config(config_select.value)
 
-                                    if not devices_data and not fume_hoods_data:
+                                    if not devices_data and not fume_hoods_data and not benches_data:
                                         ui.notify("Configuration is empty or corrupted", type='warning')
                                         return
 
                                     # Clear existing data
                                     devices_page.devices.clear()
                                     fume_hood_page.fume_hoods.clear()
+                                    bench_page.benches.clear()
 
                                     # Load devices
                                     for device_data in devices_data:
@@ -118,7 +163,8 @@ def render():
                                             'type': device_data['type'],
                                             'com_port': device_data.get('com_port', ''),
                                             'show_on_dashboard': device_data.get('show_on_dashboard', False),
-                                            'icon': device_data.get('icon', '')
+                                            'icon': device_data.get('icon', ''),
+                                            'webcams': device_data.get('webcams', [])  # Load webcams list
                                         }
                                         devices_page.devices.append(device)
 
@@ -129,6 +175,7 @@ def render():
                                             'description': fume_hood_data.get('description', ''),
                                             'assigned_person': fume_hood_data.get('assigned_person', ''),
                                             'contact_number': fume_hood_data.get('contact_number', ''),
+                                            'arduino_port': fume_hood_data.get('arduino_port'),  # Load Arduino port
                                             'sash_open': fume_hood_data.get('sash_open', False),
                                             'alarm_active': fume_hood_data.get('alarm_active', False),
                                             'webcams': fume_hood_data.get('webcams', []),
@@ -148,7 +195,30 @@ def render():
 
                                         fume_hood_page.fume_hoods.append(fume_hood)
 
-                                    ui.notify(f"Loaded '{config_select.value}': {len(devices_data)} device(s), {len(fume_hoods_data)} fume hood(s)", type='positive')
+                                    # Load benches
+                                    for bench_data in benches_data:
+                                        bench = {
+                                            'name': bench_data['name'],
+                                            'description': bench_data.get('description', ''),
+                                            'location': bench_data.get('location', ''),
+                                            'webcams': bench_data.get('webcams', []),
+                                            'dashboard_webcam': bench_data.get('dashboard_webcam', None),
+                                        }
+
+                                        # Restore assigned devices by finding them by name
+                                        if 'assigned_device_names' in bench_data:
+                                            assigned_devices = []
+                                            for device_name in bench_data['assigned_device_names']:
+                                                # Find the device in the devices list
+                                                for device in devices_page.devices:
+                                                    if device['name'] == device_name:
+                                                        assigned_devices.append(device)
+                                                        break
+                                            bench['assigned_devices'] = assigned_devices
+
+                                        bench_page.benches.append(bench)
+
+                                    ui.notify(f"Loaded '{config_select.value}': {len(devices_data)} device(s), {len(fume_hoods_data)} fume hood(s), {len(benches_data)} bench(es)", type='positive')
                                     load_dialog.close()
 
                                     # Refresh the current page to show loaded data
@@ -162,35 +232,8 @@ def render():
                 ui.button("Save Configuration", icon="save", on_click=show_save_dialog).props("color=primary")
                 ui.button("Load Configuration", icon="upload", on_click=show_load_dialog).props("color=secondary")
 
-        # Get all fume hoods (they're always shown on dashboard)
-        dashboard_fume_hoods = fume_hood_page.fume_hoods
-
-        # Get all device names that are assigned to any fume hood
-        assigned_device_names = set()
-        for fume_hood in dashboard_fume_hoods:
-            if fume_hood.get('assigned_devices'):
-                for device in fume_hood['assigned_devices']:
-                    assigned_device_names.add(device['name'])
-
-        # Get devices that should be shown on dashboard AND are not assigned to any fume hood
-        dashboard_devices = [d for d in devices_page.devices
-                           if d.get('show_on_dashboard', False) and d['name'] not in assigned_device_names]
-
-        if dashboard_devices or dashboard_fume_hoods:
-            # Display devices and fume hoods in a grid
-            with ui.grid(columns=2).style("gap: 20px; width: 100%;"):
-                # Render devices
-                for device in dashboard_devices:
-                    render_device_card(device)
-
-                # Render fume hoods - each spans 2 columns
-                for fume_hood in dashboard_fume_hoods:
-                    # Container that spans 2 columns
-                    with ui.column().style("grid-column: span 2; width: 100%;"):
-                        render_fume_hood_card(fume_hood)
-        else:
-            ui.label("No devices or fume hoods configured for dashboard display.").style("color: #888888; font-size: 16px; margin-top: 10px;")
-            ui.label("Add devices from the Devices page or fume hoods from the Fume Hood page to see them here.").style("color: #888888; font-size: 14px; margin-top: 5px;")
+        # Render dashboard content directly (timer-based updates handle live data)
+        render_dashboard_content()
 
 def render_device_card(device):
     """Render a dashboard card for a device"""
@@ -289,11 +332,11 @@ def render_fume_hood_card(fume_hood):
         with ui.row().style("width: 100%; justify-content: space-between; align-items: center; margin-bottom: 15px;"):
             ui.label(fume_hood['name']).style("color: white; font-size: 18px; font-weight: bold;")
 
-            # Alarm status badge
+            # Alarm status badge - create updateable element
             if fume_hood.get('alarm_active', False):
-                ui.badge("ALARM", color="red")
+                dashboard_alarm_badge = ui.badge("ALARM", color="red")
             else:
-                ui.badge("Normal", color="green")
+                dashboard_alarm_badge = ui.badge("Normal", color="green")
 
         # 2-column layout for compact display
         with ui.row().style("width: 100%; gap: 20px; align-items: flex-start;"):
@@ -303,10 +346,10 @@ def render_fume_hood_card(fume_hood):
                 with ui.row().style("width: 100%; gap: 20px; align-items: flex-start;"):
                     # Fume hood icon/visual
                     with ui.column().style("align-items: center; justify-content: center; min-width: 100px;"):
-                        # Large sash status icon
+                        # Large sash status icon - create updateable element
                         sash_icon = "↑" if fume_hood.get('sash_open', False) else "↓"
                         sash_color = "#ef5350" if fume_hood.get('sash_open', False) else "#66bb6a"
-                        ui.label(sash_icon).style(f"color: {sash_color}; font-size: 48px; font-weight: bold;")
+                        dashboard_sash_icon_label = ui.label(sash_icon).style(f"color: {sash_color}; font-size: 48px; font-weight: bold;")
 
                     # Column with fume hood info and data
                     with ui.column().style("flex: 1; gap: 10px;"):
@@ -320,14 +363,52 @@ def render_fume_hood_card(fume_hood):
                                 ui.label("Sash Status").style("color: white; font-size: 12px; font-weight: bold;")
                                 sash_status = "OPEN" if fume_hood.get('sash_open', False) else "CLOSED"
                                 sash_badge_color = "red" if fume_hood.get('sash_open', False) else "green"
-                                ui.badge(sash_status, color=sash_badge_color).style("font-size: 14px;")
+                                dashboard_sash_badge = ui.badge(sash_status, color=sash_badge_color).style("font-size: 14px;")
 
                             with ui.column().style("gap: 5px;"):
                                 ui.label("Safety Status").style("color: white; font-size: 12px; font-weight: bold;")
                                 if fume_hood.get('sash_open', False):
-                                    ui.label("⚠ In Use").style("color: #ef5350; font-size: 14px; font-weight: bold;")
+                                    dashboard_safety_label = ui.label("⚠ In Use").style("color: #ef5350; font-size: 14px; font-weight: bold;")
                                 else:
-                                    ui.label("✓ Safe").style("color: #66bb6a; font-size: 14px; font-weight: bold;")
+                                    dashboard_safety_label = ui.label("✓ Safe").style("color: #66bb6a; font-size: 14px; font-weight: bold;")
+
+                        # Start periodic update if Arduino is connected
+                        if fume_hood['name'] in fume_hood_page.active_arduino_connections:
+                            def update_dashboard_sash_status():
+                                # Check if still connected
+                                if fume_hood['name'] in fume_hood_page.active_arduino_connections:
+                                    # Update alarm badge
+                                    if fume_hood.get('alarm_active', False):
+                                        dashboard_alarm_badge.set_text("ALARM")
+                                        dashboard_alarm_badge.props("color=red")
+                                    else:
+                                        dashboard_alarm_badge.set_text("Normal")
+                                        dashboard_alarm_badge.props("color=green")
+
+                                    # Update icon
+                                    new_icon = "↑" if fume_hood.get('sash_open', False) else "↓"
+                                    new_color = "#ef5350" if fume_hood.get('sash_open', False) else "#66bb6a"
+                                    dashboard_sash_icon_label.set_text(new_icon)
+                                    dashboard_sash_icon_label.style(f"color: {new_color}; font-size: 48px; font-weight: bold;")
+
+                                    # Update badge
+                                    new_status = "OPEN" if fume_hood.get('sash_open', False) else "CLOSED"
+                                    dashboard_sash_badge.set_text(new_status)
+                                    dashboard_sash_badge.props(f"color={'red' if fume_hood.get('sash_open', False) else 'green'}")
+
+                                    # Update safety status
+                                    if fume_hood.get('sash_open', False):
+                                        dashboard_safety_label.set_text("⚠ In Use")
+                                        dashboard_safety_label.style("color: #ef5350; font-size: 14px; font-weight: bold;")
+                                    else:
+                                        dashboard_safety_label.set_text("✓ Safe")
+                                        dashboard_safety_label.style("color: #66bb6a; font-size: 14px; font-weight: bold;")
+
+                                    # Schedule next update
+                                    ui.timer(0.5, update_dashboard_sash_status, once=True)
+
+                            # Start the update timer
+                            ui.timer(0.5, update_dashboard_sash_status, once=True)
 
                 # Assigned Devices section (in left column)
                 if fume_hood.get('assigned_devices'):
@@ -419,6 +500,122 @@ def render_fume_hood_card(fume_hood):
                                 ui.label(f"📹 Live Feed - Device {webcam['url']}").style("color: #66bb6a; font-size: 14px; margin-bottom: 10px;")
                                 dashboard_image = ui.interactive_image().style("width: 100%; max-width: 400px; height: auto; border-radius: 8px;")
                                 fume_hood_page.register_webcam_image(fume_hood, webcam, dashboard_image)
+                            else:
+                                # Show disconnected message
+                                with ui.card().style("background-color: #444444; padding: 30px; width: 100%; max-width: 400px; height: 300px; display: flex; align-items: center; justify-content: center;"):
+                                    with ui.column().style("align-items: center; gap: 10px;"):
+                                        ui.label("📹").style("color: #666666; font-size: 36px;")
+                                        ui.label("Camera Disconnected").style("color: #888888; font-size: 14px;")
+                                        ui.label(f"Device {webcam['url']}").style("color: #666666; font-size: 12px;")
+
+def render_bench_card(bench):
+    """Render a dashboard card for a bench"""
+    with ui.card().style("background-color: #333333; padding: 20px; width: 100%;"):
+        # Bench header with name
+        with ui.row().style("width: 100%; justify-content: space-between; align-items: center; margin-bottom: 15px;"):
+            ui.label(bench['name']).style("color: white; font-size: 18px; font-weight: bold;")
+            ui.badge("Bench", color="blue")
+
+        # 2-column layout for compact display
+        with ui.row().style("width: 100%; gap: 20px; align-items: flex-start;"):
+            # Left column - Bench info and assigned devices
+            with ui.column().style("flex: 1; gap: 15px;"):
+                # Description and location if available
+                if bench.get('description'):
+                    ui.label(bench['description']).style("color: #888888; font-size: 14px;")
+                if bench.get('location'):
+                    ui.label(f"Location: {bench['location']}").style("color: #888888; font-size: 14px;")
+
+                # Assigned Devices section
+                if bench.get('assigned_devices'):
+                    with ui.column().style("width: 100%; margin-top: 15px; padding-top: 15px; border-top: 1px solid #444444; gap: 10px;"):
+                        ui.label("Assigned Devices").style("color: white; font-size: 14px; font-weight: bold;")
+
+                        # Display each assigned device
+                        for device in bench['assigned_devices']:
+                            with ui.card().style("background-color: #444444; padding: 10px; width: 100%;"):
+                                # Row with device image and info/data
+                                with ui.row().style("width: 100%; gap: 15px; align-items: flex-start;"):
+                                    # Device image from images folder
+                                    import devices as device_modules
+                                    device_module = device_modules.get_device_module(device['type'])
+                                    device_info = device_module.get_device_info() if device_module else {}
+
+                                    if device_info.get('image'):
+                                        ui.image(device_info['image']).style("width: 80px; height: auto; border-radius: 8px;")
+
+                                    # Column with device info and data
+                                    with ui.column().style("flex: 1; gap: 5px;"):
+                                        # Device name
+                                        ui.label(device['name']).style("color: white; font-size: 14px; font-weight: bold;")
+                                        ui.label(f"Type: {device.get('type', 'Unknown')}").style("color: #888888; font-size: 12px;")
+
+                                        # Device-specific data display (compact)
+                                        if device['type'] == 'ika_stirrer':
+                                            with ui.row().style("gap: 15px;"):
+                                                if 'driver' in device and device.get('connection_state', {}).get('connected', False):
+                                                    # Create updateable labels
+                                                    try:
+                                                        temp = device['driver'].get_temperature(sensor_type=2)
+                                                        temp_label = ui.label(f"🌡 {temp:.1f}°C").style("color: #ef5350; font-size: 12px; font-weight: bold;")
+                                                    except:
+                                                        temp_label = ui.label("🌡 --°C").style("color: #ef5350; font-size: 12px;")
+                                                    try:
+                                                        speed = device['driver'].get_speed()
+                                                        speed_label = ui.label(f"⚙ {speed:.0f} RPM").style("color: #42a5f5; font-size: 12px; font-weight: bold;")
+                                                    except:
+                                                        speed_label = ui.label("⚙ -- RPM").style("color: #42a5f5; font-size: 12px;")
+
+                                                    # Start periodic update for this device
+                                                    def update_dashboard_device_data():
+                                                        if device.get('connection_state', {}).get('connected', False):
+                                                            try:
+                                                                temp = device['driver'].get_temperature(sensor_type=2)
+                                                                temp_label.set_text(f"🌡 {temp:.1f}°C")
+                                                            except:
+                                                                temp_label.set_text("🌡 --°C")
+                                                            try:
+                                                                speed = device['driver'].get_speed()
+                                                                speed_label.set_text(f"⚙ {speed:.0f} RPM")
+                                                            except:
+                                                                speed_label.set_text("⚙ -- RPM")
+                                                            # Schedule next update
+                                                            ui.timer(2.0, update_dashboard_device_data, once=True)
+
+                                                    # Start the update timer
+                                                    ui.timer(2.0, update_dashboard_device_data, once=True)
+                                                else:
+                                                    ui.label("Disconnected").style("color: #888888; font-size: 12px;")
+                                        elif device['type'] == 'edwards_tic':
+                                            ui.label("P: 1.0e-3 mbar").style("color: #66bb6a; font-size: 12px; font-weight: bold;")
+
+            # Right column - Webcam section
+            with ui.column().style("flex: 1; gap: 15px;"):
+                # Webcam section - show if a dashboard webcam is selected
+                if bench.get('dashboard_webcam'):
+                    dashboard_webcam_name = bench.get('dashboard_webcam')
+                    # Find the webcam details
+                    webcam = None
+                    if 'webcams' in bench:
+                        for cam in bench['webcams']:
+                            if cam['name'] == dashboard_webcam_name:
+                                webcam = cam
+                                break
+
+                    if webcam:
+                        with ui.column().style("width: 100%; gap: 10px;"):
+                            ui.label(f"Webcam: {webcam['name']}").style("color: white; font-size: 14px; font-weight: bold;")
+
+                            # Check if webcam is connected
+                            key = (bench['name'], webcam['name'])
+                            is_connected = key in bench_page.active_webcam_captures
+
+                            # Display webcam feed
+                            if is_connected:
+                                # Show live feed
+                                ui.label(f"📹 Live Feed - Device {webcam['url']}").style("color: #66bb6a; font-size: 14px; margin-bottom: 10px;")
+                                dashboard_image = ui.interactive_image().style("width: 100%; max-width: 400px; height: auto; border-radius: 8px;")
+                                bench_page.register_webcam_image(bench, webcam, dashboard_image)
                             else:
                                 # Show disconnected message
                                 with ui.card().style("background-color: #444444; padding: 30px; width: 100%; max-width: 400px; height: 300px; display: flex; align-items: center; justify-content: center;"):

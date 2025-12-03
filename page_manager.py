@@ -1,6 +1,6 @@
 # page_manager.py
 from nicegui import ui
-from pages import home, status, devices, experiment, robot, settings, about, log, fume_hood
+from pages import home, status, devices, experiment, robot, settings, about, log, fume_hood, bench
 
 class PageManager:
     def __init__(self, content_area, nav_buttons):
@@ -59,3 +59,6 @@ class PageManager:
 
     def show_fume_hood(self):
         self.show_page("Fume Hood", fume_hood, "fume_hood")
+
+    def show_bench(self):
+        self.show_page("Bench", bench, "bench")

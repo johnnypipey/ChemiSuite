@@ -21,7 +21,7 @@ def ensure_data_directory():
         os.makedirs(CONFIGS_DIR)
         print(f"Created configs directory: {CONFIGS_DIR}")
 
-def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: List[Dict[str, Any]]) -> bool:
+def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: List[Dict[str, Any]], benches: List[Dict[str, Any]] = None) -> bool:
     """
     Save complete system configuration to a named JSON file
 
@@ -29,6 +29,7 @@ def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: Lis
         config_name: Name for this configuration
         devices: List of device dictionaries
         fume_hoods: List of fume hood dictionaries
+        benches: List of bench dictionaries
 
     Returns:
         True if save was successful, False otherwise
@@ -52,7 +53,8 @@ def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: Lis
                 'type': device['type'],
                 'com_port': device.get('com_port', ''),
                 'show_on_dashboard': device.get('show_on_dashboard', False),
-                'icon': device.get('icon', '')
+                'icon': device.get('icon', ''),
+                'webcams': device.get('webcams', [])  # Save webcams list
             }
             devices_to_save.append(device_copy)
 
@@ -64,6 +66,7 @@ def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: Lis
                 'description': fume_hood.get('description', ''),
                 'assigned_person': fume_hood.get('assigned_person', ''),
                 'contact_number': fume_hood.get('contact_number', ''),
+                'arduino_port': fume_hood.get('arduino_port'),  # Save Arduino port for sash monitoring
                 'sash_open': fume_hood.get('sash_open', False),
                 'alarm_active': fume_hood.get('alarm_active', False),
                 'webcams': fume_hood.get('webcams', []),
@@ -77,24 +80,45 @@ def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: Lis
 
             fume_hoods_to_save.append(fume_hood_copy)
 
-        # Save both to a single configuration file
+        # Create a clean copy of benches without runtime data
+        benches_to_save = []
+        if benches is None:
+            benches = []
+        for bench in benches:
+            bench_copy = {
+                'name': bench['name'],
+                'description': bench.get('description', ''),
+                'location': bench.get('location', ''),
+                'webcams': bench.get('webcams', []),
+                'dashboard_webcam': bench.get('dashboard_webcam', None),
+            }
+
+            # Save assigned device names (not the full device objects)
+            if 'assigned_devices' in bench:
+                assigned_device_names = [d['name'] for d in bench['assigned_devices']]
+                bench_copy['assigned_device_names'] = assigned_device_names
+
+            benches_to_save.append(bench_copy)
+
+        # Save all to a single configuration file
         config = {
             'config_name': config_name,
             'devices': devices_to_save,
-            'fume_hoods': fume_hoods_to_save
+            'fume_hoods': fume_hoods_to_save,
+            'benches': benches_to_save
         }
 
         with open(config_file, 'w') as f:
             json.dump(config, f, indent=4)
 
-        print(f"Saved configuration '{config_name}': {len(devices_to_save)} devices, {len(fume_hoods_to_save)} fume hoods to {config_file}")
+        print(f"Saved configuration '{config_name}': {len(devices_to_save)} devices, {len(fume_hoods_to_save)} fume hoods, {len(benches_to_save)} benches to {config_file}")
         return True
 
     except Exception as e:
         print(f"Error saving configuration: {e}")
         return False
 
-def load_config(config_name: str) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def load_config(config_name: str) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Load complete system configuration from a named JSON file
 
@@ -102,33 +126,34 @@ def load_config(config_name: str) -> tuple[List[Dict[str, Any]], List[Dict[str, 
         config_name: Name of the configuration to load
 
     Returns:
-        Tuple of (devices_list, fume_hoods_list), or ([], []) if file doesn't exist
+        Tuple of (devices_list, fume_hoods_list, benches_list), or ([], [], []) if file doesn't exist
     """
     try:
         # Sanitize config name for filename
         safe_name = "".join(c for c in config_name if c.isalnum() or c in (' ', '-', '_')).strip()
         if not safe_name:
             print("Invalid configuration name")
-            return [], []
+            return [], [], []
 
         config_file = os.path.join(CONFIGS_DIR, f"{safe_name}.json")
 
         if not os.path.exists(config_file):
             print(f"No configuration file found at {config_file}")
-            return [], []
+            return [], [], []
 
         with open(config_file, 'r') as f:
             config = json.load(f)
 
         devices = config.get('devices', [])
         fume_hoods = config.get('fume_hoods', [])
+        benches = config.get('benches', [])
 
-        print(f"Loaded configuration '{config_name}': {len(devices)} devices, {len(fume_hoods)} fume hoods from {config_file}")
-        return devices, fume_hoods
+        print(f"Loaded configuration '{config_name}': {len(devices)} devices, {len(fume_hoods)} fume hoods, {len(benches)} benches from {config_file}")
+        return devices, fume_hoods, benches
 
     except Exception as e:
         print(f"Error loading configuration: {e}")
-        return [], []
+        return [], [], []
 
 def get_saved_configs() -> List[str]:
     """

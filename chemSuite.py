@@ -110,7 +110,8 @@ if __name__ in {"__main__", "__mp_main__"}:
                         nav_buttons['devices'] = ui.button("Devices", icon="devices").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['experiment'] = ui.button("Experiment", icon="science").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['robot'] = ui.button("Robot", icon="smart_toy").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
-                        nav_buttons['fume_hood'] = ui.button("Fume Hood", icon="air").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 20px; font-weight: normal;")
+                        nav_buttons['fume_hood'] = ui.button("Fume Hood", icon="air").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
+                        nav_buttons['bench'] = ui.button("Bench", icon="table_restaurant").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 20px; font-weight: normal;")
 
                         # Section 3: Configuration
                         ui.label("Configuration").style("color: white; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
@@ -136,6 +137,7 @@ if __name__ in {"__main__", "__mp_main__"}:
         nav_buttons['experiment'].on_click(lambda: page_mgr.show_experiment())
         nav_buttons['robot'].on_click(lambda: page_mgr.show_robot())
         nav_buttons['fume_hood'].on_click(lambda: page_mgr.show_fume_hood())
+        nav_buttons['bench'].on_click(lambda: page_mgr.show_bench())
         nav_buttons['settings'].on_click(lambda: page_mgr.show_settings())
         nav_buttons['about'].on_click(lambda: page_mgr.show_about())
         nav_buttons['log'].on_click(lambda: page_mgr.show_log())
@@ -152,12 +154,22 @@ if __name__ in {"__main__", "__mp_main__"}:
 
     def on_shutdown():
         """Cleanup resources when app closes"""
-        # Cleanup all webcam connections
+        # Cleanup all webcam connections (fume hoods)
         from pages import fume_hood
         fume_hood.cleanup_all_webcams()
 
-        # Cleanup device connections
+        # Cleanup all Arduino connections (fume hoods)
+        fume_hood.cleanup_all_arduino_connections()
+
+        # Cleanup all bench webcam connections
+        from pages import bench
+        bench.cleanup_all_webcams()
+
+        # Cleanup all device webcam connections
         from pages import devices as devices_page
+        devices_page.cleanup_all_device_webcams()
+
+        # Cleanup device connections
         for device in devices_page.devices:
             if 'driver' in device and device['driver'] is not None:
                 driver = device['driver']

@@ -2,6 +2,9 @@
 from nicegui import ui
 import cv2
 import asyncio
+import serial
+import serial.tools.list_ports
+import threading
 from typing import Optional
 
 # Store fume hoods (in a real app, this would be in a database or state management)
@@ -12,6 +15,9 @@ fume_hood_container = None
 
 # Dictionary to store active webcam captures and latest frames
 active_webcam_captures = {}  # Format: {(fume_hood_name, webcam_name): {'capture': cv2.VideoCapture, 'frame_base64': str, 'running': bool, 'images': []}}
+
+# Dictionary to store active Arduino connections for sash monitoring
+active_arduino_connections = {}  # Format: {fume_hood_name: {'serial': serial.Serial, 'thread': threading.Thread, 'running': bool}}
 
 def cleanup_all_webcams():
     """Disconnect all webcams and release resources - called on app shutdown"""
@@ -40,6 +46,128 @@ def cleanup_all_webcams():
     # Give OpenCV time to release resources
     cv2.destroyAllWindows()
     print("All webcams cleaned up")
+
+def cleanup_all_arduino_connections():
+    """Disconnect all Arduino connections - called on app shutdown"""
+    global active_arduino_connections
+
+    print("Cleaning up all Arduino connections...")
+    keys_to_remove = list(active_arduino_connections.keys())
+
+    for key in keys_to_remove:
+        try:
+            # Stop the reading thread
+            active_arduino_connections[key]['running'] = False
+
+            # Close the serial connection
+            ser = active_arduino_connections[key]['serial']
+            if ser.is_open:
+                ser.close()
+
+            print(f"Released Arduino connection: {key}")
+        except Exception as e:
+            print(f"Error releasing Arduino connection {key}: {e}")
+
+    # Clear the dictionary
+    active_arduino_connections.clear()
+    print("All Arduino connections cleaned up")
+
+def get_available_serial_ports():
+    """Get list of available serial ports"""
+    ports = serial.tools.list_ports.comports()
+    return [{"port": port.device, "description": f"{port.device} - {port.description}"} for port in ports]
+
+def connect_arduino(fume_hood):
+    """Connect to Arduino for sash monitoring"""
+    fume_hood_name = fume_hood['name']
+    arduino_port = fume_hood.get('arduino_port')
+
+    if not arduino_port:
+        ui.notify("No Arduino port configured", type='warning')
+        return False
+
+    # Check if already connected
+    if fume_hood_name in active_arduino_connections:
+        ui.notify(f"Arduino already connected for '{fume_hood_name}'", type='warning')
+        return False
+
+    try:
+        # Open serial connection
+        ser = serial.Serial(arduino_port, 9600, timeout=1)
+
+        # Wait for Arduino to initialize
+        import time
+        time.sleep(2)
+
+        # Create monitoring thread
+        running_flag = {'running': True}
+
+        def read_arduino():
+            while running_flag['running']:
+                try:
+                    if ser.in_waiting > 0:
+                        line = ser.readline().decode('utf-8').strip()
+
+                        # Update sash status based on Arduino output
+                        if line == "Window OPEN":
+                            fume_hood['sash_open'] = True
+                            print(f"Sash opened: {fume_hood_name}")
+                        elif line == "Window CLOSED":
+                            fume_hood['sash_open'] = False
+                            print(f"Sash closed: {fume_hood_name}")
+                        elif line == "Window Sensor Initialized":
+                            print(f"Arduino initialized: {fume_hood_name}")
+
+                except Exception as e:
+                    print(f"Error reading Arduino {fume_hood_name}: {e}")
+                    break
+
+                time.sleep(0.1)
+
+        # Start reading thread
+        thread = threading.Thread(target=read_arduino, daemon=True)
+        thread.start()
+
+        # Store connection info
+        active_arduino_connections[fume_hood_name] = {
+            'serial': ser,
+            'thread': thread,
+            'running': running_flag
+        }
+
+        ui.notify(f"Connected to Arduino on {arduino_port}", type='positive')
+        return True
+
+    except Exception as e:
+        ui.notify(f"Error connecting to Arduino: {str(e)}", type='negative')
+        return False
+
+def disconnect_arduino(fume_hood):
+    """Disconnect Arduino for sash monitoring"""
+    fume_hood_name = fume_hood['name']
+
+    if fume_hood_name not in active_arduino_connections:
+        ui.notify("Arduino not connected", type='warning')
+        return False
+
+    try:
+        # Stop the reading thread
+        active_arduino_connections[fume_hood_name]['running']['running'] = False
+
+        # Close serial connection
+        ser = active_arduino_connections[fume_hood_name]['serial']
+        if ser.is_open:
+            ser.close()
+
+        # Remove from active connections
+        del active_arduino_connections[fume_hood_name]
+
+        ui.notify("Arduino disconnected", type='info')
+        return True
+
+    except Exception as e:
+        ui.notify(f"Error disconnecting Arduino: {str(e)}", type='negative')
+        return False
 
 def connect_webcam(fume_hood, webcam):
     """Connect to a USB camera and start streaming"""
@@ -117,10 +245,7 @@ async def update_webcam_frame(key):
                 # Resize frame for display (640x480)
                 frame = cv2.resize(frame, (640, 480))
 
-                # Convert BGR to RGB
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-                # Encode frame to JPEG
+                # Encode frame to JPEG (cv2.imencode expects BGR format)
                 _, buffer = cv2.imencode('.jpg', frame)
 
                 # Convert to base64
@@ -204,6 +329,30 @@ def show_add_fume_hood_dialog():
 
         contact_input.on_value_change(on_contact_change)
 
+        # Arduino port selection for sash monitoring
+        ui.label("Arduino Port (for Sash Monitoring):").style("color: white; font-size: 16px; margin-bottom: 10px; margin-top: 20px;")
+
+        # Get available serial ports
+        available_ports = get_available_serial_ports()
+        port_options = [p['description'] for p in available_ports]
+
+        if not port_options:
+            port_options = ["No serial ports detected"]
+
+        arduino_port_select = ui.select(port_options, value=None).style("width: 100%;").props("dark outlined")
+
+        def on_arduino_port_change(e):
+            if e.value and e.value != "No serial ports detected":
+                # Extract port name (e.g., "COM3" from "COM3 - Arduino")
+                port_name = e.value.split(' - ')[0]
+                selected_fume_hood['arduino_port'] = port_name
+            else:
+                selected_fume_hood['arduino_port'] = None
+
+        arduino_port_select.on_value_change(on_arduino_port_change)
+
+        ui.label("(Optional) Select the COM port where Arduino sash sensor is connected").style("color: #888888; font-size: 12px; margin-top: 5px;")
+
         # Buttons
         with ui.row().style("width: 100%; justify-content: flex-end; gap: 10px; margin-top: 30px;"):
             ui.button("Cancel", on_click=dialog.close).props("flat color=white")
@@ -225,6 +374,7 @@ def show_add_fume_hood_dialog():
                     'description': selected_fume_hood['description'],
                     'assigned_person': selected_fume_hood['assigned_person'],
                     'contact_number': selected_fume_hood['contact_number'],
+                    'arduino_port': selected_fume_hood.get('arduino_port'),  # Arduino port for sash monitoring
                     'sash_open': False,  # True if sash is open, False if closed
                     'alarm_active': False,
                     'webcams': [],  # List of webcams: [{'name': 'Front View', 'url': 'http://...', 'show_on_dashboard': False}, ...]
@@ -240,6 +390,8 @@ def show_add_fume_hood_dialog():
             ui.button("Add Fume Hood", on_click=add_fume_hood, icon="add").props("color=primary")
 
     dialog.open()
+
+# Note: Removed old flag-polling system - now using direct timer-based updates like IKA hotplate
 
 def refresh_fume_hood_list():
     """Refresh the fume hood list display"""
@@ -312,7 +464,8 @@ def edit_fume_hood(fume_hood):
             'name': fume_hood['name'],
             'description': fume_hood.get('description', ''),
             'assigned_person': fume_hood.get('assigned_person', ''),
-            'contact_number': fume_hood.get('contact_number', '')
+            'contact_number': fume_hood.get('contact_number', ''),
+            'arduino_port': fume_hood.get('arduino_port')
         }
 
         # Name input
@@ -351,6 +504,38 @@ def edit_fume_hood(fume_hood):
 
         contact_input.on_value_change(on_contact_change)
 
+        # Arduino port selection for sash monitoring
+        ui.label("Arduino Port (for Sash Monitoring):").style("color: white; font-size: 16px; margin-bottom: 10px; margin-top: 20px;")
+
+        # Get available serial ports
+        available_ports = get_available_serial_ports()
+        port_options = [p['description'] for p in available_ports]
+
+        if not port_options:
+            port_options = ["No serial ports detected"]
+
+        # Find current port in options
+        current_port_display = None
+        if fume_hood.get('arduino_port'):
+            for option in port_options:
+                if option.startswith(fume_hood.get('arduino_port')):
+                    current_port_display = option
+                    break
+
+        arduino_port_select = ui.select(port_options, value=current_port_display).style("width: 100%;").props("dark outlined")
+
+        def on_arduino_port_change(e):
+            if e.value and e.value != "No serial ports detected":
+                # Extract port name (e.g., "COM3" from "COM3 - Arduino")
+                port_name = e.value.split(' - ')[0]
+                edited_data['arduino_port'] = port_name
+            else:
+                edited_data['arduino_port'] = None
+
+        arduino_port_select.on_value_change(on_arduino_port_change)
+
+        ui.label("(Optional) Select the COM port where Arduino sash sensor is connected").style("color: #888888; font-size: 12px; margin-top: 5px;")
+
         # Buttons
         with ui.row().style("width: 100%; justify-content: flex-end; gap: 10px; margin-top: 30px;"):
             ui.button("Cancel", on_click=dialog.close).props("flat color=white")
@@ -372,6 +557,7 @@ def edit_fume_hood(fume_hood):
                 fume_hood['description'] = edited_data['description']
                 fume_hood['assigned_person'] = edited_data['assigned_person']
                 fume_hood['contact_number'] = edited_data['contact_number']
+                fume_hood['arduino_port'] = edited_data['arduino_port']
 
                 ui.notify(f"Updated fume hood: {edited_data['name']}", type='positive')
                 dialog.close()
@@ -618,19 +804,49 @@ def render_fume_hood_panel(fume_hood):
                     with ui.card().style("background-color: #333333; padding: 20px; flex: 1;"):
                         ui.label("Sash Status").style("color: white; font-size: 16px; font-weight: bold; margin-bottom: 15px;")
 
-                        # Large status indicator
+                        # Large status indicator - create updateable elements
                         sash_status = "OPEN" if fume_hood['sash_open'] else "CLOSED"
                         sash_color = "#ef5350" if fume_hood['sash_open'] else "#66bb6a"
                         sash_icon = "↑" if fume_hood['sash_open'] else "↓"
 
                         with ui.column().style("align-items: center; gap: 10px;"):
-                            ui.label(sash_icon).style(f"color: {sash_color}; font-size: 48px; font-weight: bold;")
-                            ui.badge(sash_status, color="red" if fume_hood['sash_open'] else "green").style("font-size: 16px; padding: 8px 16px;")
+                            sash_icon_label = ui.label(sash_icon).style(f"color: {sash_color}; font-size: 48px; font-weight: bold;")
+                            sash_badge = ui.badge(sash_status, color="red" if fume_hood['sash_open'] else "green").style("font-size: 16px; padding: 8px 16px;")
 
                             if fume_hood['sash_open']:
-                                ui.label("⚠ Hood is in use").style("color: #ef5350; font-size: 14px; margin-top: 10px;")
+                                sash_status_label = ui.label("⚠ Hood is in use").style("color: #ef5350; font-size: 14px; margin-top: 10px;")
                             else:
-                                ui.label("✓ Hood is safe").style("color: #66bb6a; font-size: 14px; margin-top: 10px;")
+                                sash_status_label = ui.label("✓ Hood is safe").style("color: #66bb6a; font-size: 14px; margin-top: 10px;")
+
+                        # Start periodic update if Arduino is connected
+                        if fume_hood['name'] in active_arduino_connections:
+                            def update_sash_status():
+                                # Check if still connected
+                                if fume_hood['name'] in active_arduino_connections:
+                                    # Update icon
+                                    new_icon = "↑" if fume_hood['sash_open'] else "↓"
+                                    new_color = "#ef5350" if fume_hood['sash_open'] else "#66bb6a"
+                                    sash_icon_label.set_text(new_icon)
+                                    sash_icon_label.style(f"color: {new_color}; font-size: 48px; font-weight: bold;")
+
+                                    # Update badge
+                                    new_status = "OPEN" if fume_hood['sash_open'] else "CLOSED"
+                                    sash_badge.set_text(new_status)
+                                    sash_badge.props(f"color={'red' if fume_hood['sash_open'] else 'green'}")
+
+                                    # Update status text
+                                    if fume_hood['sash_open']:
+                                        sash_status_label.set_text("⚠ Hood is in use")
+                                        sash_status_label.style("color: #ef5350; font-size: 14px; margin-top: 10px;")
+                                    else:
+                                        sash_status_label.set_text("✓ Hood is safe")
+                                        sash_status_label.style("color: #66bb6a; font-size: 14px; margin-top: 10px;")
+
+                                    # Schedule next update
+                                    ui.timer(0.5, update_sash_status, once=True)
+
+                            # Start the update timer
+                            ui.timer(0.5, update_sash_status, once=True)
 
                     # Alarm card
                     with ui.card().style("background-color: #333333; padding: 20px; flex: 1;"):
@@ -654,16 +870,44 @@ def render_fume_hood_panel(fume_hood):
                     ui.label("Monitoring Controls").style("color: white; font-size: 16px; font-weight: bold; margin-bottom: 15px;")
 
                     with ui.column().style("width: 100%; gap: 10px;"):
-                        # Toggle sash button
-                        def toggle_sash():
-                            fume_hood['sash_open'] = not fume_hood['sash_open']
-                            status = "opened" if fume_hood['sash_open'] else "closed"
-                            ui.notify(f"Sash {status}", type='warning' if fume_hood['sash_open'] else 'positive')
-                            refresh_fume_hood_list()
+                        # Arduino Connection Controls (if port is configured)
+                        if fume_hood.get('arduino_port'):
+                            is_connected = fume_hood['name'] in active_arduino_connections
 
-                        sash_btn_text = "Close Sash" if fume_hood['sash_open'] else "Open Sash"
-                        sash_btn_icon = "arrow_downward" if fume_hood['sash_open'] else "arrow_upward"
-                        ui.button(sash_btn_text, icon=sash_btn_icon, on_click=toggle_sash).props("color=primary").style("width: 100%;")
+                            def toggle_arduino():
+                                if is_connected:
+                                    if disconnect_arduino(fume_hood):
+                                        refresh_fume_hood_list()
+                                else:
+                                    if connect_arduino(fume_hood):
+                                        refresh_fume_hood_list()
+
+                            arduino_btn_text = "Disconnect Arduino" if is_connected else "Connect Arduino"
+                            arduino_btn_icon = "usb_off" if is_connected else "usb"
+                            arduino_btn_color = "negative" if is_connected else "green"
+                            ui.button(arduino_btn_text, icon=arduino_btn_icon, on_click=toggle_arduino).props(f"color={arduino_btn_color}").style("width: 100%;")
+
+                            # Show connection status
+                            if is_connected:
+                                ui.label(f"✓ Arduino connected on {fume_hood.get('arduino_port')} - Sash status is live").style("color: #66bb6a; font-size: 12px; margin-top: 5px;")
+                            else:
+                                ui.label(f"Arduino not connected - Manual mode active").style("color: #888888; font-size: 12px; margin-top: 5px;")
+
+                            ui.label("").style("height: 10px;")  # Spacer
+
+                        # Toggle sash button (only show if Arduino is not connected)
+                        if not fume_hood.get('arduino_port') or fume_hood['name'] not in active_arduino_connections:
+                            def toggle_sash():
+                                fume_hood['sash_open'] = not fume_hood['sash_open']
+                                status = "opened" if fume_hood['sash_open'] else "closed"
+                                ui.notify(f"Sash {status}", type='warning' if fume_hood['sash_open'] else 'positive')
+                                refresh_fume_hood_list()
+
+                            sash_btn_text = "Close Sash" if fume_hood['sash_open'] else "Open Sash"
+                            sash_btn_icon = "arrow_downward" if fume_hood['sash_open'] else "arrow_upward"
+                            ui.button(sash_btn_text, icon=sash_btn_icon, on_click=toggle_sash).props("color=primary").style("width: 100%;")
+                        else:
+                            ui.label("Sash status controlled by Arduino sensor").style("color: #888888; font-size: 12px; font-style: italic;")
 
                         # Test alarm button
                         def test_alarm():

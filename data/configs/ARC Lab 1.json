@@ -1,0 +1,40 @@
+{
+    "config_name": "ARC Lab 1",
+    "devices": [
+        {
+            "name": "IKA Stirrer Hotplate",
+            "type": "ika_stirrer",
+            "com_port": "COM25",
+            "show_on_dashboard": true,
+            "icon": "c:\\Users\\johnn\\Documents\\PhD\\ChemiSuite\\devices\\icons\\hotplate.png",
+            "webcams": [
+                {
+                    "name": "Hotplate View",
+                    "url": "2"
+                }
+            ]
+        }
+    ],
+    "fume_hoods": [
+        {
+            "name": "ARC Lab Hood 1",
+            "description": "",
+            "assigned_person": "",
+            "contact_number": "",
+            "arduino_port": "COM17",
+            "sash_open": false,
+            "alarm_active": false,
+            "webcams": [
+                {
+                    "name": "Front View",
+                    "url": "1"
+                }
+            ],
+            "dashboard_webcam": "Front View",
+            "assigned_device_names": [
+                "IKA Stirrer Hotplate"
+            ]
+        }
+    ],
+    "benches": []
+}

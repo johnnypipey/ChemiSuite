@@ -2,12 +2,190 @@
 from nicegui import ui
 import devices as device_modules
 import serial.tools.list_ports
+import cv2
+import asyncio
 
 # Store devices (in a real app, this would be in a database or state management)
 devices = []
 
 # Container reference for re-rendering
 device_container = None
+
+# Dictionary to store active device webcam captures and latest frames
+active_device_webcam_captures = {}  # Format: {(device_name, webcam_name): {'capture': cv2.VideoCapture, 'frame_base64': str, 'running': bool, 'images': []}}
+
+def cleanup_all_device_webcams():
+    """Disconnect all device webcams and release resources - called on app shutdown"""
+    global active_device_webcam_captures
+
+    print("Cleaning up all device webcams...")
+    keys_to_remove = list(active_device_webcam_captures.keys())
+
+    for key in keys_to_remove:
+        try:
+            # Stop the update loop
+            active_device_webcam_captures[key]['running'] = False
+
+            # Release the capture
+            cap = active_device_webcam_captures[key]['capture']
+            if cap.isOpened():
+                cap.release()
+
+            print(f"Released device webcam: {key}")
+        except Exception as e:
+            print(f"Error releasing device webcam {key}: {e}")
+
+    # Clear the dictionary
+    active_device_webcam_captures.clear()
+
+    # Give OpenCV time to release resources
+    cv2.destroyAllWindows()
+    print("All device webcams cleaned up")
+
+def connect_device_webcam(device, webcam):
+    """Connect to a USB camera for device monitoring and start streaming"""
+    key = (device['name'], webcam['name'])
+
+    # Check if already connected
+    if key in active_device_webcam_captures:
+        ui.notify(f"Webcam '{webcam['name']}' is already connected", type='warning')
+        return False
+
+    try:
+        device_id = int(webcam['url'])
+        # Use DirectShow backend to avoid MSMF conflicts when multiple cameras are used
+        cap = cv2.VideoCapture(device_id, cv2.CAP_DSHOW)
+
+        if not cap.isOpened():
+            ui.notify(f"Failed to open camera {device_id}", type='negative')
+            return False
+
+        # Store capture and frame data
+        active_device_webcam_captures[key] = {
+            'capture': cap,
+            'frame_base64': None,
+            'running': True,
+            'images': []  # List of image elements to update
+        }
+
+        # Start async frame update
+        asyncio.create_task(update_device_webcam_frame(key))
+
+        ui.notify(f"Connected to webcam '{webcam['name']}'", type='positive')
+        return True
+
+    except Exception as e:
+        ui.notify(f"Error connecting to webcam: {str(e)}", type='negative')
+        return False
+
+def disconnect_device_webcam(device, webcam):
+    """Disconnect from a USB camera and stop streaming"""
+    key = (device['name'], webcam['name'])
+
+    if key not in active_device_webcam_captures:
+        ui.notify(f"Webcam '{webcam['name']}' is not connected", type='warning')
+        return False
+
+    try:
+        # Stop the update loop
+        active_device_webcam_captures[key]['running'] = False
+
+        # Release the capture
+        cap = active_device_webcam_captures[key]['capture']
+        cap.release()
+
+        # Remove from active captures
+        del active_device_webcam_captures[key]
+
+        ui.notify(f"Disconnected webcam '{webcam['name']}'", type='info')
+        return True
+
+    except Exception as e:
+        ui.notify(f"Error disconnecting webcam: {str(e)}", type='negative')
+        return False
+
+async def update_device_webcam_frame(key):
+    """Async function to continuously update device webcam frames"""
+    import base64
+
+    while key in active_device_webcam_captures and active_device_webcam_captures[key]['running']:
+        try:
+            cap = active_device_webcam_captures[key]['capture']
+
+            ret, frame = cap.read()
+
+            if ret:
+                # Resize frame for display (640x480)
+                frame = cv2.resize(frame, (640, 480))
+
+                # Encode frame to JPEG (cv2.imencode expects BGR format)
+                _, buffer = cv2.imencode('.jpg', frame)
+
+                # Convert to base64
+                img_base64 = base64.b64encode(buffer).decode('utf-8')
+                data_url = f'data:image/jpeg;base64,{img_base64}'
+
+                # Store the frame
+                active_device_webcam_captures[key]['frame_base64'] = data_url
+
+                # Update all registered image elements
+                for img_element in active_device_webcam_captures[key]['images']:
+                    try:
+                        img_element.set_source(data_url)
+                    except:
+                        pass  # Element might have been deleted
+
+            # Wait before next frame (30 FPS)
+            await asyncio.sleep(0.033)
+
+        except Exception as e:
+            print(f"Error updating device webcam frame for {key}: {e}")
+            break
+
+    # Clean up if loop exits due to error
+    if key in active_device_webcam_captures:
+        try:
+            active_device_webcam_captures[key]['capture'].release()
+            del active_device_webcam_captures[key]
+        except:
+            pass
+
+def register_device_webcam_image(device, webcam, image_element):
+    """Register an image element to receive device webcam updates"""
+    key = (device['name'], webcam['name'])
+    if key in active_device_webcam_captures:
+        active_device_webcam_captures[key]['images'].append(image_element)
+        # Set initial frame if available
+        if active_device_webcam_captures[key]['frame_base64']:
+            image_element.set_source(active_device_webcam_captures[key]['frame_base64'])
+
+def get_available_cameras():
+    """Detect available USB cameras"""
+    available_cameras = []
+
+    # Test cameras 0-4 (most systems won't have more than 5 cameras)
+    for i in range(5):
+        try:
+            # Use DirectShow on Windows to avoid Intel RealSense issues
+            cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
+
+            # Set a short timeout
+            cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 1000)
+
+            if cap.isOpened():
+                # Try to read a frame to confirm camera is working
+                ret, _ = cap.read()
+                if ret:
+                    available_cameras.append({
+                        'id': i,
+                        'name': f"Camera {i}"
+                    })
+                cap.release()
+        except Exception as e:
+            print(f"Error checking camera {i}: {e}")
+            continue
+
+    return available_cameras
 
 def show_add_device_dialog():
     """Show the add device wizard dialog"""
@@ -95,6 +273,7 @@ def show_add_device_dialog():
                     'type': selected_device['type'],
                     'name': device_name_input.value,
                     'icon': device_module.get_device_info()['icon'] if device_module else None,
+                    'webcams': []  # Initialize empty webcams list
                 }
                 # Add any additional fields from selected_device (e.g., com_port)
                 for key, value in selected_device.items():
@@ -168,6 +347,13 @@ def remove_device(device_name):
         if d['name'] == device_name:
             device_to_remove = d
             break
+
+    # Disconnect all webcams before removing
+    if device_to_remove and 'webcams' in device_to_remove:
+        for webcam in device_to_remove['webcams']:
+            key = (device_name, webcam['name'])
+            if key in active_device_webcam_captures:
+                disconnect_device_webcam(device_to_remove, webcam)
 
     # Cleanup before removal
     if device_to_remove and 'driver' in device_to_remove:

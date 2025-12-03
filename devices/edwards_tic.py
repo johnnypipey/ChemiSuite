@@ -1,6 +1,8 @@
 # devices/edwards_tic.py
 from nicegui import ui
 import os
+# Import the webcam rendering function from ika_stirrer (shared utility)
+from .ika_stirrer import render_device_webcam_section
 
 def get_device_info():
     """Return basic device information"""
@@ -112,3 +114,6 @@ def render_control_panel(device, on_remove=None):
                         with ui.row().style("align-items: baseline; gap: 5px;"):
                             ui.label("1.0e-3").style("color: #66bb6a; font-size: 36px; font-weight: bold;")
                             ui.label("mbar").style("color: #66bb6a; font-size: 18px;")
+
+            # Webcam Monitoring Section
+            render_device_webcam_section(device)
