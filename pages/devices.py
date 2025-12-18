@@ -280,6 +280,10 @@ def show_add_device_dialog():
                     if key not in ['type', 'name', 'module']:
                         device_data[key] = value
 
+                # Add loggable parameters if device module provides them
+                if device_module and hasattr(device_module, 'get_loggable_parameters'):
+                    device_data['loggable_parameters'] = device_module.get_loggable_parameters()
+
                 devices.append(device_data)
                 dialog.close()
 
@@ -337,6 +341,90 @@ def render():
         with device_container:
             render_device_list()
 
+def edit_device(device):
+    """Show dialog to edit device name and COM port"""
+    with ui.dialog() as dialog, ui.card().style("background-color: #333333; padding: 20px; min-width: 500px;"):
+        ui.label("Edit Device").style("color: white; font-size: 20px; font-weight: bold; margin-bottom: 20px;")
+
+        edited_data = {
+            'name': device['name'],
+            'com_port': device.get('com_port')
+        }
+
+        # Name input
+        ui.label("Device Name:").style("color: white; font-size: 16px; margin-bottom: 10px;")
+        name_input = ui.input(value=device['name'], placeholder="Enter device name").style("width: 100%;").props("dark outlined")
+
+        def on_name_change(e):
+            edited_data['name'] = e.value
+
+        name_input.on_value_change(on_name_change)
+
+        # COM port selection (if device has com_port field)
+        if 'com_port' in device:
+            ui.label("COM Port:").style("color: white; font-size: 16px; margin-bottom: 10px; margin-top: 20px;")
+
+            # Get available COM ports
+            ports = serial.tools.list_ports.comports()
+            com_port_options = []
+            for port in ports:
+                com_port_options.append(f"{port.device} - {port.description}")
+
+            if not com_port_options:
+                com_port_options = ["No COM ports detected"]
+
+            # Find current port in options
+            current_port_display = None
+            if device.get('com_port'):
+                for option in com_port_options:
+                    if option.startswith(device.get('com_port')):
+                        current_port_display = option
+                        break
+
+            com_port_select = ui.select(com_port_options, value=current_port_display).style("width: 100%;").props("dark outlined")
+
+            def on_com_port_change(e):
+                if e.value and e.value != "No COM ports detected":
+                    # Extract port name (e.g., "COM3" from "COM3 - USB Serial Device")
+                    port_name = e.value.split(' - ')[0]
+                    edited_data['com_port'] = port_name
+                else:
+                    edited_data['com_port'] = None
+
+            com_port_select.on_value_change(on_com_port_change)
+
+        # Buttons
+        with ui.row().style("width: 100%; justify-content: flex-end; gap: 10px; margin-top: 30px;"):
+            ui.button("Cancel", on_click=dialog.close).props("flat color=white")
+
+            def save_changes():
+                # Validate name
+                if not edited_data['name']:
+                    ui.notify("Please enter a device name", type='warning')
+                    return
+
+                # Check if new name conflicts with another device
+                if edited_data['name'] != device['name']:
+                    if any(d['name'] == edited_data['name'] for d in devices):
+                        ui.notify("A device with this name already exists", type='warning')
+                        return
+
+                # Update device
+                old_name = device['name']
+                device['name'] = edited_data['name']
+                if 'com_port' in edited_data:
+                    device['com_port'] = edited_data['com_port']
+
+                ui.notify(f"Device '{old_name}' updated successfully", type='positive')
+                dialog.close()
+
+                # Refresh the device list
+                refresh_device_list()
+
+            ui.button("Save Changes", icon="save", on_click=save_changes).props("color=primary")
+
+    dialog.open()
+
 def remove_device(device_name):
     """Remove a device by name"""
     global devices
@@ -382,8 +470,12 @@ def render_device_panel(device):
     device_module = device_modules.get_device_module(device['type'])
 
     if device_module:
-        # Use the device module's render function with remove callback
-        device_module.render_control_panel(device, on_remove=lambda: remove_device(device['name']))
+        # Use the device module's render function with edit and remove callbacks
+        device_module.render_control_panel(
+            device,
+            on_edit=lambda: edit_device(device),
+            on_remove=lambda: remove_device(device['name'])
+        )
     else:
         # Fallback if device module not found
         with ui.column().style("padding: 20px;"):

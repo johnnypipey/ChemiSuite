@@ -71,6 +71,7 @@ def save_config(config_name: str, devices: List[Dict[str, Any]], fume_hoods: Lis
                 'alarm_active': fume_hood.get('alarm_active', False),
                 'webcams': fume_hood.get('webcams', []),
                 'dashboard_webcam': fume_hood.get('dashboard_webcam', None),
+                'assigned_roboschlenk': fume_hood.get('assigned_roboschlenk', False),  # Save RoboSchlenk assignment
             }
 
             # Save assigned device names (not the full device objects)

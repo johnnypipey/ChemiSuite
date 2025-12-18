@@ -4,24 +4,27 @@
         {
             "name": "IKA Stirrer Hotplate",
             "type": "ika_stirrer",
-            "com_port": "COM25",
+            "com_port": "COM26",
             "show_on_dashboard": true,
             "icon": "c:\\Users\\johnn\\Documents\\PhD\\ChemiSuite\\devices\\icons\\hotplate.png",
-            "webcams": [
-                {
-                    "name": "Hotplate View",
-                    "url": "2"
-                }
-            ]
+            "webcams": []
+        },
+        {
+            "name": "Azura Pump",
+            "type": "azura_pump",
+            "com_port": "COM31",
+            "show_on_dashboard": false,
+            "icon": "c:\\Users\\johnn\\Documents\\PhD\\ChemiSuite\\devices\\icons\\pump.png",
+            "webcams": []
         }
     ],
     "fume_hoods": [
         {
             "name": "ARC Lab Hood 1",
-            "description": "",
-            "assigned_person": "",
-            "contact_number": "",
-            "arduino_port": "COM17",
+            "description": "Main automation fume hood located in D/116 ARC lab.\n\nSetup for testing and development of Automated Chemistry workflows and devices.\n\nNO CHEMICALS OTHER THAN WATER TO BE USED!",
+            "assigned_person": "Jonathon Pipe",
+            "contact_number": "07526631341",
+            "arduino_port": "COM32",
             "sash_open": false,
             "alarm_active": false,
             "webcams": [
@@ -31,8 +34,10 @@
                 }
             ],
             "dashboard_webcam": "Front View",
+            "assigned_roboschlenk": true,
             "assigned_device_names": [
-                "IKA Stirrer Hotplate"
+                "IKA Stirrer Hotplate",
+                "Azura Pump"
             ]
         }
     ],

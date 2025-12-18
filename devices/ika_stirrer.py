@@ -199,6 +199,23 @@ def get_device_info():
         'image': image_path
     }
 
+def get_loggable_parameters():
+    """Return parameters that can be logged for this device"""
+    return {
+        'temperature': {
+            'method': 'get_temperature',
+            'unit': '°C',
+            'args': {'sensor_type': 2},
+            'display_name': 'Temperature'
+        },
+        'speed': {
+            'method': 'get_speed',
+            'unit': 'RPM',
+            'args': {},
+            'display_name': 'Stirring Speed'
+        }
+    }
+
 def show_wizard_fields(selected_device, com_ports):
     """
     Show device-specific wizard fields (COM port selection, etc.)
@@ -262,20 +279,32 @@ def validate_wizard_fields(selected_device):
 
     return True, ""
 
-def render_control_panel(device, on_remove=None):
+def render_control_panel(device, on_edit=None, on_remove=None):
     """
     Render the control panel for this device
 
     Args:
         device: Dictionary containing device configuration (name, type, com_port, etc.)
+        on_edit: Optional callback function to call when edit button is clicked
         on_remove: Optional callback function to call when remove button is clicked
     """
-    # Initialize driver only if it doesn't exist (persist across tab switches)
+    # Initialize driver only if it doesn't exist OR if COM port has changed (persist across tab switches)
     if 'driver' not in device or device['driver'] is None:
         driver = IKAHotplateDriver(device.get('com_port', 'COM1'))
         device['driver'] = driver
+        device['driver_com_port'] = device.get('com_port', 'COM1')
     else:
-        driver = device['driver']
+        # Check if COM port has changed
+        if device.get('com_port') != device.get('driver_com_port'):
+            # COM port changed, recreate driver
+            driver = IKAHotplateDriver(device.get('com_port', 'COM1'))
+            device['driver'] = driver
+            device['driver_com_port'] = device.get('com_port', 'COM1')
+            # Reset connection state since we have a new driver
+            if 'connection_state' in device:
+                device['connection_state']['connected'] = False
+        else:
+            driver = device['driver']
 
     # Connection state - persist across tab switches
     if 'connection_state' not in device:
@@ -294,9 +323,12 @@ def render_control_panel(device, on_remove=None):
                 badge_color = "green" if connection_state['connected'] else "red"
                 connection_badge = ui.badge(badge_text, color=badge_color).style("margin-left: 10px;")
 
-            # Right: Remove button
-            if on_remove:
-                ui.button("Remove Device", icon="delete", on_click=on_remove).props("flat color=negative")
+            # Right: Edit and Remove buttons
+            with ui.row().style("gap: 10px;"):
+                if on_edit:
+                    ui.button("Edit", icon="edit", on_click=on_edit).props("flat color=white")
+                if on_remove:
+                    ui.button("Remove Device", icon="delete", on_click=on_remove).props("flat color=negative")
 
         # Content area (will scroll with outer container)
         with ui.column().style("padding: 20px; gap: 20px;"):

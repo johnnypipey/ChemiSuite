@@ -353,6 +353,17 @@ def show_add_fume_hood_dialog():
 
         ui.label("(Optional) Select the COM port where Arduino sash sensor is connected").style("color: #888888; font-size: 12px; margin-top: 5px;")
 
+        # RoboSchlenk assignment checkbox
+        ui.label("RoboSchlenk Assignment:").style("color: white; font-size: 16px; margin-bottom: 10px; margin-top: 20px;")
+
+        assigned_roboschlenk = {'value': False}
+
+        def on_roboschlenk_change(e):
+            assigned_roboschlenk['value'] = e.value
+
+        roboschlenk_checkbox = ui.checkbox("Assign RoboSchlenk to this fume hood").props("dark").on_value_change(on_roboschlenk_change)
+        ui.label("(Optional) Enable to show RoboSchlenk tap positions on dashboard").style("color: #888888; font-size: 12px; margin-top: 5px;")
+
         # Buttons
         with ui.row().style("width: 100%; justify-content: flex-end; gap: 10px; margin-top: 30px;"):
             ui.button("Cancel", on_click=dialog.close).props("flat color=white")
@@ -378,7 +389,8 @@ def show_add_fume_hood_dialog():
                     'sash_open': False,  # True if sash is open, False if closed
                     'alarm_active': False,
                     'webcams': [],  # List of webcams: [{'name': 'Front View', 'url': 'http://...', 'show_on_dashboard': False}, ...]
-                    'dashboard_webcam': None  # Name of webcam to show on dashboard
+                    'dashboard_webcam': None,  # Name of webcam to show on dashboard
+                    'assigned_roboschlenk': assigned_roboschlenk['value']  # Whether RoboSchlenk is assigned to this fume hood
                 }
 
                 fume_hoods.append(new_fume_hood)
@@ -465,7 +477,8 @@ def edit_fume_hood(fume_hood):
             'description': fume_hood.get('description', ''),
             'assigned_person': fume_hood.get('assigned_person', ''),
             'contact_number': fume_hood.get('contact_number', ''),
-            'arduino_port': fume_hood.get('arduino_port')
+            'arduino_port': fume_hood.get('arduino_port'),
+            'assigned_roboschlenk': fume_hood.get('assigned_roboschlenk', False)
         }
 
         # Name input
@@ -536,6 +549,15 @@ def edit_fume_hood(fume_hood):
 
         ui.label("(Optional) Select the COM port where Arduino sash sensor is connected").style("color: #888888; font-size: 12px; margin-top: 5px;")
 
+        # RoboSchlenk assignment checkbox
+        ui.label("RoboSchlenk Assignment:").style("color: white; font-size: 16px; margin-bottom: 10px; margin-top: 20px;")
+
+        def on_roboschlenk_edit_change(e):
+            edited_data['assigned_roboschlenk'] = e.value
+
+        ui.checkbox("Assign RoboSchlenk to this fume hood", value=fume_hood.get('assigned_roboschlenk', False)).props("dark").on_value_change(on_roboschlenk_edit_change)
+        ui.label("(Optional) Enable to show RoboSchlenk tap positions on dashboard").style("color: #888888; font-size: 12px; margin-top: 5px;")
+
         # Buttons
         with ui.row().style("width: 100%; justify-content: flex-end; gap: 10px; margin-top: 30px;"):
             ui.button("Cancel", on_click=dialog.close).props("flat color=white")
@@ -558,6 +580,7 @@ def edit_fume_hood(fume_hood):
                 fume_hood['assigned_person'] = edited_data['assigned_person']
                 fume_hood['contact_number'] = edited_data['contact_number']
                 fume_hood['arduino_port'] = edited_data['arduino_port']
+                fume_hood['assigned_roboschlenk'] = edited_data['assigned_roboschlenk']
 
                 ui.notify(f"Updated fume hood: {edited_data['name']}", type='positive')
                 dialog.close()
@@ -962,6 +985,87 @@ def render_fume_hood_panel(fume_hood):
                             refresh_fume_hood_list()
 
                         ui.button("Reset", icon="restart_alt", on_click=reset_fume_hood).props("flat color=white").style("width: 100%;")
+
+                # RoboSchlenk status section (if assigned)
+                if fume_hood.get('assigned_roboschlenk', False):
+                    from pages import roboschlenk as roboschlenk_page
+
+                    with ui.card().style("background-color: #333333; padding: 20px; width: 100%;"):
+                        ui.label("RoboSchlenk Tap Positions").style("color: white; font-size: 16px; font-weight: bold; margin-bottom: 15px;")
+
+                        # Check if RoboSchlenk controller is connected
+                        controller = roboschlenk_page.roboschlenk_state.get('controller')
+                        is_connected = roboschlenk_page.roboschlenk_state.get('connected', False)
+
+                        if is_connected and controller:
+                            # Create 2x2 grid for tap displays
+                            tap_elements = {}
+
+                            with ui.grid(columns=2).style("width: 100%; gap: 15px;"):
+                                for motor_name in ['A', 'B', 'C', 'D']:
+                                    with ui.card().style("background-color: #444444; padding: 15px;"):
+                                        with ui.column().style("align-items: center; gap: 10px;"):
+                                            # Motor label
+                                            ui.label(f"Tap {motor_name}").style("color: white; font-size: 16px; font-weight: bold;")
+
+                                            # Status badge (will be updated)
+                                            status_badge = ui.badge("UNKNOWN", color="grey").style("font-size: 14px; padding: 6px 12px;")
+
+                                            # Angle display
+                                            angle_label = ui.label("--°").style("color: #888888; font-size: 14px;")
+
+                                            # Store elements for updates
+                                            tap_elements[motor_name] = {
+                                                'badge': status_badge,
+                                                'angle': angle_label
+                                            }
+
+                            # Function to update tap statuses
+                            def update_tap_statuses():
+                                for motor_name in ['A', 'B', 'C', 'D']:
+                                    status = controller.get_motor_status(motor_name)
+                                    if status:
+                                        angle = status.angle
+
+                                        # Check if motor is moving first
+                                        if status.moving:
+                                            position = "MOVING"
+                                            color = "#888888"  # Grey
+                                            badge_color = "grey"
+                                        # Determine position and color based on angle
+                                        elif abs(angle - 0) < 10 or abs(angle - 180) < 10:
+                                            position = "CLOSED"
+                                            color = "#10b981"  # Green
+                                            badge_color = "green"
+                                        elif abs(angle - 90) < 10:
+                                            position = "GAS"
+                                            color = "#3b82f6"  # Blue
+                                            badge_color = "blue"
+                                        elif abs(angle - 270) < 10:
+                                            position = "VACUUM"
+                                            color = "#f97316"  # Orange
+                                            badge_color = "orange"
+                                        else:
+                                            position = "MOVING"
+                                            color = "#888888"  # Grey
+                                            badge_color = "grey"
+
+                                        # Update badge and angle
+                                        tap_elements[motor_name]['badge'].set_text(position)
+                                        tap_elements[motor_name]['badge'].props(f"color={badge_color}")
+                                        tap_elements[motor_name]['angle'].set_text(f"{angle:.1f}°")
+                                        tap_elements[motor_name]['angle'].style(f"color: {color}; font-size: 14px;")
+
+                            # Perform immediate update
+                            update_tap_statuses()
+                            # Start continuous update timer
+                            ui.timer(0.5, update_tap_statuses)
+                        else:
+                            # Show disconnected message
+                            with ui.column().style("align-items: center; gap: 10px; padding: 20px;"):
+                                ui.label("⚠").style("color: #888888; font-size: 48px;")
+                                ui.label("RoboSchlenk not connected").style("color: #888888; font-size: 16px;")
+                                ui.label("Go to RoboSchlenk page to connect").style("color: #666666; font-size: 12px;")
 
                 # Information section (moved to left column)
                 with ui.card().style("background-color: #333333; padding: 20px; width: 100%;"):

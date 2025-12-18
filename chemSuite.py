@@ -72,6 +72,13 @@ if __name__ in {"__main__", "__mp_main__"}:
             ::-webkit-scrollbar-thumb:hover {
                 background: #666666;
             }
+            /* CodeMirror text color - make white for better visibility */
+            .cm-content {
+                color: white !important;
+            }
+            .cm-line {
+                color: white !important;
+            }
         </style>
         """)
 
@@ -98,8 +105,8 @@ if __name__ in {"__main__", "__mp_main__"}:
 
                 # Left sidebar menu
                 with ui.column().style("width: 300px; background-color: #333333; height: calc(100vh - 30px); padding: 20px; margin: 0; justify-content: space-between;"):
-                    # Top section with menu items
-                    with ui.column().style("width: 100%;"):
+                    # Top section with menu items (scrollable if needed)
+                    with ui.column().style("width: 100%; overflow-y: auto; flex-shrink: 1;"):
                         # Section 1: Dashboard
                         ui.label("Dashboard").style("color: white; font-size: 14px; font-weight: bold; margin-bottom: 10px; margin-top: 0;")
                         nav_buttons['home'] = ui.button("Home", icon="home").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
@@ -108,10 +115,23 @@ if __name__ in {"__main__", "__mp_main__"}:
                         # Section 2: Laboratory
                         ui.label("Laboratory").style("color: white; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
                         nav_buttons['devices'] = ui.button("Devices", icon="devices").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
-                        nav_buttons['experiment'] = ui.button("Experiment", icon="science").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
+                        nav_buttons['roboschlenk'] = ui.button("RoboSchlenk", icon="science").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
+                        nav_buttons['experiment'] = ui.button("Lab Book", icon="book").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
+
+                        # Programming button with badge container
+                        with ui.element('div').style("position: relative; width: 100%;"):
+                            nav_buttons['programming'] = ui.button("Programming", icon="code").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
+                            # Create badge element (hidden by default)
+                            nav_buttons['programming_badge'] = ui.element('div').style(
+                                "position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; "
+                                "background-color: #ff9800; border-radius: 50%; display: none;"
+                            )
+
+                        nav_buttons['data_logging'] = ui.button("Data Logging", icon="timeline").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['robot'] = ui.button("Robot", icon="smart_toy").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['fume_hood'] = ui.button("Fume Hood", icon="air").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
-                        nav_buttons['bench'] = ui.button("Bench", icon="table_restaurant").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 20px; font-weight: normal;")
+                        nav_buttons['bench'] = ui.button("Bench", icon="table_restaurant").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
+                        nav_buttons['archemedes'] = ui.button("ARCHEMedes", icon="support_agent").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 20px; font-weight: normal;")
 
                         # Section 3: Configuration
                         ui.label("Configuration").style("color: white; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
@@ -119,8 +139,8 @@ if __name__ in {"__main__", "__mp_main__"}:
                         nav_buttons['about'] = ui.button("About", icon="info").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['log'] = ui.button("Log", icon="description").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; font-weight: normal;")
 
-                    # Bottom section with app title
-                    with ui.column().style("width: 100%; display: flex; justify-content: flex-end; align-items: center; flex-grow: 1; padding-bottom: 20px;"):
+                    # Bottom section with app title (always visible)
+                    with ui.column().style("width: 100%; display: flex; justify-content: flex-end; align-items: center; flex-shrink: 0; padding-top: 20px; padding-bottom: 20px;"):
                         ui.label("ChemiSuite").classes("app-title").style("color: white; font-size: 32px; text-align: center; width: 100%;")
 
                 # Main content area
@@ -135,12 +155,16 @@ if __name__ in {"__main__", "__mp_main__"}:
         nav_buttons['status'].on_click(lambda: page_mgr.show_status())
         nav_buttons['devices'].on_click(lambda: page_mgr.show_devices())
         nav_buttons['experiment'].on_click(lambda: page_mgr.show_experiment())
+        nav_buttons['programming'].on_click(lambda: page_mgr.show_programming())
+        nav_buttons['data_logging'].on_click(lambda: page_mgr.show_data_logging())
         nav_buttons['robot'].on_click(lambda: page_mgr.show_robot())
         nav_buttons['fume_hood'].on_click(lambda: page_mgr.show_fume_hood())
         nav_buttons['bench'].on_click(lambda: page_mgr.show_bench())
+        nav_buttons['roboschlenk'].on_click(lambda: page_mgr.show_roboschlenk())
         nav_buttons['settings'].on_click(lambda: page_mgr.show_settings())
         nav_buttons['about'].on_click(lambda: page_mgr.show_about())
         nav_buttons['log'].on_click(lambda: page_mgr.show_log())
+        nav_buttons['archemedes'].on_click(lambda: page_mgr.show_archemedes())
 
         # Show home page by default - use timer to ensure UI is ready
         ui.timer(0.1, lambda: page_mgr.show_home(), once=True)

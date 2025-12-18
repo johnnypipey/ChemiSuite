@@ -11,11 +11,15 @@ Each device module should provide:
 
 from . import ika_stirrer
 from . import edwards_tic
+from . import azura_pump
+from . import wpi_syringe_pump
 
 # Registry of all available devices
 AVAILABLE_DEVICES = [
     ika_stirrer,
     edwards_tic,
+    azura_pump,
+    wpi_syringe_pump,
 ]
 
 def get_all_devices():

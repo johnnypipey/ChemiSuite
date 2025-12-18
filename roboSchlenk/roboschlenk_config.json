@@ -1,0 +1,10 @@
+{
+  "motor_controller_port": "COM17",
+  "display_ports": {
+    "A": "COM23",
+    "B": "COM21",
+    "C": "COM22",
+    "D": "COM4"
+  },
+  "configured": true
+}

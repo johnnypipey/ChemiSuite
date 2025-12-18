@@ -78,12 +78,13 @@ def validate_wizard_fields(selected_device):
 
     return True, ""
 
-def render_control_panel(device, on_remove=None):
+def render_control_panel(device, on_edit=None, on_remove=None):
     """
     Render the control panel for this device
 
     Args:
         device: Dictionary containing device configuration (name, type, com_port, etc.)
+        on_edit: Optional callback function to call when edit button is clicked
         on_remove: Optional callback function to call when remove button is clicked
     """
     with ui.column().style("width: 100%; gap: 0;"):
@@ -94,9 +95,12 @@ def render_control_panel(device, on_remove=None):
                 ui.label(f"{device['name']} Controls").style("color: white; font-size: 18px; font-weight: bold;")
                 ui.label(f"COM Port: {device.get('com_port', 'N/A')}").style("color: #888888; font-size: 14px;")
 
-            # Right: Remove button
-            if on_remove:
-                ui.button("Remove Device", icon="delete", on_click=on_remove).props("flat color=negative")
+            # Right: Edit and Remove buttons
+            with ui.row().style("gap: 10px;"):
+                if on_edit:
+                    ui.button("Edit", icon="edit", on_click=on_edit).props("flat color=white")
+                if on_remove:
+                    ui.button("Remove Device", icon="delete", on_click=on_remove).props("flat color=negative")
 
         # Content area (will scroll with outer container)
         with ui.column().style("padding: 20px; gap: 20px;"):

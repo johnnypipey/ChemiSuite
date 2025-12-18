@@ -180,6 +180,7 @@ def render():
                                             'alarm_active': fume_hood_data.get('alarm_active', False),
                                             'webcams': fume_hood_data.get('webcams', []),
                                             'dashboard_webcam': fume_hood_data.get('dashboard_webcam', None),
+                                            'assigned_roboschlenk': fume_hood_data.get('assigned_roboschlenk', False),  # Load RoboSchlenk assignment
                                         }
 
                                         # Restore assigned devices by finding them by name
@@ -404,11 +405,95 @@ def render_fume_hood_card(fume_hood):
                                         dashboard_safety_label.set_text("✓ Safe")
                                         dashboard_safety_label.style("color: #66bb6a; font-size: 14px; font-weight: bold;")
 
-                                    # Schedule next update
-                                    ui.timer(0.5, update_dashboard_sash_status, once=True)
+                            # Perform immediate update
+                            update_dashboard_sash_status()
+                            # Start continuous update timer
+                            ui.timer(0.5, update_dashboard_sash_status)
 
-                            # Start the update timer
-                            ui.timer(0.5, update_dashboard_sash_status, once=True)
+                # RoboSchlenk status section (if assigned)
+                if fume_hood.get('assigned_roboschlenk', False):
+                    from pages import roboschlenk as roboschlenk_page
+
+                    with ui.column().style("width: 100%; margin-top: 15px; padding-top: 15px; border-top: 1px solid #444444; gap: 10px;"):
+                        ui.label("RoboSchlenk Taps").style("color: white; font-size: 14px; font-weight: bold;")
+
+                        # Check if RoboSchlenk controller is connected
+                        controller = roboschlenk_page.roboschlenk_state.get('controller')
+                        is_connected = roboschlenk_page.roboschlenk_state.get('connected', False)
+
+                        if is_connected and controller:
+                            # Create 2x2 grid for compact tap displays
+                            tap_elements = {}
+
+                            with ui.grid(columns=2).style("width: 100%; gap: 10px;"):
+                                for motor_name in ['A', 'B', 'C', 'D']:
+                                    with ui.card().style("background-color: #444444; padding: 10px;"):
+                                        with ui.column().style("align-items: center; gap: 5px;"):
+                                            # Motor label
+                                            ui.label(f"Tap {motor_name}").style("color: white; font-size: 12px; font-weight: bold;")
+
+                                            # Status badge (will be updated)
+                                            status_badge = ui.badge("UNKNOWN", color="grey").style("font-size: 11px; padding: 4px 8px;")
+
+                                            # Angle display
+                                            angle_label = ui.label("--°").style("color: #888888; font-size: 11px;")
+
+                                            # Store elements for updates
+                                            tap_elements[motor_name] = {
+                                                'badge': status_badge,
+                                                'angle': angle_label
+                                            }
+
+                            # Function to update tap statuses
+                            def update_dashboard_tap_statuses():
+                                # Get fresh controller state each time
+                                current_controller = roboschlenk_page.roboschlenk_state.get('controller')
+                                current_connected = roboschlenk_page.roboschlenk_state.get('connected', False)
+
+                                if current_connected and current_controller:
+                                    for motor_name in ['A', 'B', 'C', 'D']:
+                                        status = current_controller.get_motor_status(motor_name)
+                                        if status:
+                                            angle = status.angle
+
+                                            # Check if motor is moving first
+                                            if status.moving:
+                                                position = "MOVING"
+                                                color = "#888888"  # Grey
+                                                badge_color = "grey"
+                                            # Determine position and color based on angle
+                                            elif abs(angle - 0) < 10 or abs(angle - 180) < 10:
+                                                position = "CLOSED"
+                                                color = "#10b981"  # Green
+                                                badge_color = "green"
+                                            elif abs(angle - 90) < 10:
+                                                position = "GAS"
+                                                color = "#3b82f6"  # Blue
+                                                badge_color = "blue"
+                                            elif abs(angle - 270) < 10:
+                                                position = "VACUUM"
+                                                color = "#f97316"  # Orange
+                                                badge_color = "orange"
+                                            else:
+                                                position = "MOVING"
+                                                color = "#888888"  # Grey
+                                                badge_color = "grey"
+
+                                            # Update badge and angle
+                                            tap_elements[motor_name]['badge'].set_text(position)
+                                            tap_elements[motor_name]['badge'].props(f"color={badge_color}")
+                                            tap_elements[motor_name]['angle'].set_text(f"{angle:.1f}°")
+                                            tap_elements[motor_name]['angle'].style(f"color: {color}; font-size: 11px;")
+
+                            # Perform immediate update
+                            update_dashboard_tap_statuses()
+                            # Start continuous update timer
+                            ui.timer(0.5, update_dashboard_tap_statuses)
+                        else:
+                            # Show disconnected message (compact version)
+                            with ui.column().style("align-items: center; gap: 5px; padding: 10px;"):
+                                ui.label("⚠").style("color: #888888; font-size: 24px;")
+                                ui.label("Not connected").style("color: #888888; font-size: 12px;")
 
                 # Assigned Devices section (in left column)
                 if fume_hood.get('assigned_devices'):

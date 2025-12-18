@@ -1,0 +1,201 @@
+Session:,Hotplate and Flow Rate Test
+Start Time:,2025-12-11 16:41:01.488596
+End Time:,2025-12-11 16:42:10.448543
+Interval (seconds):,1
+
+Timestamp,Device Name,Parameter,Value,Unit
+2025-12-11 16:41:01.706813,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:01.913970,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:02.020101,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:02.126281,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:02.233030,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:03.438596,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:03.643761,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:03.749503,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:03.855936,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:03.961506,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:05.209488,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:05.415627,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:05.521276,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:05.626933,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:05.732841,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:06.937582,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:07.154766,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:07.260686,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:07.367200,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:07.473259,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:08.679377,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:08.890189,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:09.007564,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:09.113050,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:09.221033,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:10.429964,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:10.636971,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:10.742951,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:10.849162,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:10.954870,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:12.160922,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:12.377929,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:12.485472,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:12.591290,Azura Pump,pressure,0.9,MPa
+2025-12-11 16:41:12.697146,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:13.904003,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:14.111675,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:14.221587,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:14.328541,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:14.434990,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:15.653849,IKA Stirrer Hotplate,temperature,0.0,캜
+2025-12-11 16:41:15.874478,IKA Stirrer Hotplate,speed,0.0,RPM
+2025-12-11 16:41:15.980226,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:16.086345,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:16.192092,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:18.412387,IKA Stirrer Hotplate,temperature,0.0,캜
+2025-12-11 16:41:18.630198,IKA Stirrer Hotplate,speed,110.0,RPM
+2025-12-11 16:41:18.736015,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:18.842758,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:18.949461,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:20.155087,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:20.363139,IKA Stirrer Hotplate,speed,190.0,RPM
+2025-12-11 16:41:20.469010,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:20.575815,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:20.680966,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:21.888000,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:22.106402,IKA Stirrer Hotplate,speed,240.0,RPM
+2025-12-11 16:41:22.212933,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:22.319278,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:22.425162,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:23.632870,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:23.850545,IKA Stirrer Hotplate,speed,280.0,RPM
+2025-12-11 16:41:23.956554,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:24.063970,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:24.170143,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:25.378189,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:25.585317,IKA Stirrer Hotplate,speed,310.0,RPM
+2025-12-11 16:41:25.691073,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:25.795812,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:25.901990,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:27.109902,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:27.326340,IKA Stirrer Hotplate,speed,330.0,RPM
+2025-12-11 16:41:27.433168,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:27.539407,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:27.646702,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:28.852950,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:29.070262,IKA Stirrer Hotplate,speed,360.0,RPM
+2025-12-11 16:41:29.175990,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:29.282301,Azura Pump,pressure,0.9,MPa
+2025-12-11 16:41:29.389061,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:30.595523,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:30.813284,IKA Stirrer Hotplate,speed,370.0,RPM
+2025-12-11 16:41:30.919405,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:31.026483,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:31.133232,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:32.340068,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:32.558805,IKA Stirrer Hotplate,speed,380.0,RPM
+2025-12-11 16:41:32.677125,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:32.784677,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:32.890741,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:34.096771,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:34.302792,IKA Stirrer Hotplate,speed,390.0,RPM
+2025-12-11 16:41:34.410574,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:34.517630,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:34.623968,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:35.829456,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:36.036347,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:36.141899,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:36.248395,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:36.356247,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:37.563857,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:37.793609,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:37.909407,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:38.016955,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:38.124590,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:39.332263,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:39.548669,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:39.656112,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:39.762722,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:39.868793,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:41.075142,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:41.293859,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:41.410277,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:41.516784,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:41.623510,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:42.830954,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:43.049522,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:43.155998,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:43.262263,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:43.369658,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:44.577817,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:44.785068,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:44.892176,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:44.998992,Azura Pump,pressure,0.9,MPa
+2025-12-11 16:41:45.105686,Azura Pump,motor_current,0.0,%
+2025-12-11 16:41:46.313664,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:46.520268,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:46.626915,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:46.733179,Azura Pump,pressure,0.3,MPa
+2025-12-11 16:41:46.839577,Azura Pump,motor_current,6.0,%
+2025-12-11 16:41:48.047223,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:48.265405,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:48.372149,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:48.480653,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:48.587292,Azura Pump,motor_current,46.0,%
+2025-12-11 16:41:49.792981,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:49.998960,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:50.105824,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:50.211740,Azura Pump,pressure,1.6,MPa
+2025-12-11 16:41:50.318536,Azura Pump,motor_current,45.0,%
+2025-12-11 16:41:51.523785,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:51.741018,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:51.846891,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:51.954245,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:52.060761,Azura Pump,motor_current,45.0,%
+2025-12-11 16:41:53.268376,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:53.474616,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:53.579914,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:53.685878,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:53.791927,Azura Pump,motor_current,45.0,%
+2025-12-11 16:41:54.997861,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:55.215631,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:55.326404,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:55.432931,Azura Pump,pressure,0.9,MPa
+2025-12-11 16:41:55.538518,Azura Pump,motor_current,45.0,%
+2025-12-11 16:41:56.745157,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:56.952296,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:57.058110,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:57.163639,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:41:57.270750,Azura Pump,motor_current,45.0,%
+2025-12-11 16:41:58.476894,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:41:58.684965,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:41:58.791522,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:41:58.897312,Azura Pump,pressure,0.5,MPa
+2025-12-11 16:41:59.003075,Azura Pump,motor_current,45.0,%
+2025-12-11 16:42:00.210669,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:42:00.418568,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:42:00.525393,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:42:00.630641,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:42:00.737214,Azura Pump,motor_current,46.0,%
+2025-12-11 16:42:01.943244,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:42:02.161615,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:42:02.269040,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:42:02.376105,Azura Pump,pressure,1.4,MPa
+2025-12-11 16:42:02.482248,Azura Pump,motor_current,45.0,%
+2025-12-11 16:42:03.688793,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:42:03.897145,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:42:04.004412,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:42:04.110564,Azura Pump,pressure,1.1,MPa
+2025-12-11 16:42:04.217641,Azura Pump,motor_current,46.0,%
+2025-12-11 16:42:05.423960,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:42:05.629995,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:42:05.737782,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:42:05.844330,Azura Pump,pressure,1.1,MPa
+2025-12-11 16:42:05.951528,Azura Pump,motor_current,46.0,%
+2025-12-11 16:42:07.160252,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:42:07.378124,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:42:07.485379,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:42:07.591816,Azura Pump,pressure,1.1,MPa
+2025-12-11 16:42:07.697725,Azura Pump,motor_current,46.0,%
+2025-12-11 16:42:08.904675,IKA Stirrer Hotplate,temperature,18.7,캜
+2025-12-11 16:42:09.121908,IKA Stirrer Hotplate,speed,400.0,RPM
+2025-12-11 16:42:09.228967,Azura Pump,flow_rate,10000.0,킠/min
+2025-12-11 16:42:09.335069,Azura Pump,pressure,0.7,MPa
+2025-12-11 16:42:09.441433,Azura Pump,motor_current,46.0,%
