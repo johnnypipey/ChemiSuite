@@ -240,6 +240,18 @@ def connect_display(motor):
         ui.notify(f"No display port configured for Motor {motor}", type='warning')
         return False
 
+    # First, disconnect any existing connection to ensure clean state
+    if roboschlenk_state['displays'][motor]['serial']:
+        try:
+            roboschlenk_state['displays'][motor]['serial'].close()
+        except:
+            pass
+        roboschlenk_state['displays'][motor]['serial'] = None
+        roboschlenk_state['displays'][motor]['connected'] = False
+        # Give the OS time to release the port
+        import time
+        time.sleep(0.5)
+
     try:
         import serial
         import time

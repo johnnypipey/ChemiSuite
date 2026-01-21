@@ -73,7 +73,7 @@ class PageManager:
         self.show_page("Data Logging", data_logging, "data_logging")
 
     def show_archemedes(self):
-        self.show_page("ARCHEMedes", archemedes, "archemedes")
+        self.show_page("ARChemedes - Remote Monitoring", archemedes, "archemedes")
 
     def show_roboschlenk(self):
         self.show_page("RoboSchlenk", roboschlenk, "roboschlenk")

@@ -131,7 +131,7 @@ if __name__ in {"__main__", "__mp_main__"}:
                         nav_buttons['robot'] = ui.button("Robot", icon="smart_toy").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['fume_hood'] = ui.button("Fume Hood", icon="air").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
                         nav_buttons['bench'] = ui.button("Bench", icon="table_restaurant").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 5px; font-weight: normal;")
-                        nav_buttons['archemedes'] = ui.button("ARCHEMedes", icon="support_agent").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 20px; font-weight: normal;")
+                        nav_buttons['archemedes'] = ui.button("ARChemedes", icon="broadcast_on_personal").props("flat align=left").classes("w-full sidebar-btn").style("justify-content: flex-start; margin-bottom: 20px; font-weight: normal;")
 
                         # Section 3: Configuration
                         ui.label("Configuration").style("color: white; font-size: 14px; font-weight: bold; margin-bottom: 10px;")
